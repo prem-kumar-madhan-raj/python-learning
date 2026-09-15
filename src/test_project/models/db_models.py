@@ -42,6 +42,24 @@ class TenantInvoiceCounter(Base):
     tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id"), primary_key=True)
     last_number: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
+class Invoice(Base):
+    __tablename__ = "invoices"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(Integer, ForeignKey("tenants.id"))
+    customer_id: Mapped[int] = mapped_column(Integer, ForeignKey("customers.id"))
+    invoice_number: Mapped[str] = mapped_column(String, nullable=False)
+    sub_total: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=False)
+    total: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=False)
+    created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())
+
+class InvoiceLineItem(Base):
+    __tablename__ = "invoice_line_items"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    invoice_id: Mapped[int] = mapped_column(Integer, ForeignKey("invoices.id"))
+    description: Mapped[str] = mapped_column(String, nullable=False)
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    unit_price: Mapped[Numeric] = mapped_column(Numeric(10, 2), nullable=False)
+
 DATABASE_URL = settings.database_url
 engine = create_engine(settings.database_url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
