@@ -69,3 +69,7 @@ async def create_invoice_route(request: InvoiceCreateRequest, db: Session = Depe
     db.commit()
 
     return {"invoice_number": invoice_number, "subtotal": calculated.subtotal, "total": calculated.total}
+
+@router.get("/{invoice_number}/pdf")
+async def get_invoice_pdf(invoice_number: str, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    pass
