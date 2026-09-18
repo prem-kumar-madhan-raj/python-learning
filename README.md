@@ -142,7 +142,7 @@ erDiagram
         int tenant_id FK
     }
     TENANT_INVOICE_COUNTERS {
-        int tenant_id PK_FK
+        int tenant_id PK
         int last_number
     }
     INVOICES {
@@ -173,7 +173,7 @@ erDiagram
 
 **`customers`** — people/businesses a tenant sells to. Also tenant-scoped — the same real person buying from two different StockFlow businesses correctly shows up as two unrelated rows, one per tenant, since each business's record of that relationship is independently theirs.
 
-**`tenant_invoice_counters`** — one row per tenant, tracking the last invoice number issued. `tenant_id` is *both* the primary key and a foreign key here — this table exists specifically to make invoice numbering **safe under concurrency**: two simultaneous invoice-creation requests correctly get different, sequential numbers because this row gets locked (`with_for_update()`) while one request is using it, forcing the other to wait its turn rather than both reading the same "last number" and colliding.
+**`tenant_invoice_counters`** — one row per tenant, tracking the last invoice number issued. `tenant_id` is *both* the primary key and a foreign key here (shown as `PK` in the diagram above — Mermaid doesn't support labeling a column as both `PK` and `FK` at once, but in the real schema it's declared with `ForeignKey("tenants.id")` and set as `primary_key=True`). This table exists specifically to make invoice numbering **safe under concurrency**: two simultaneous invoice-creation requests correctly get different, sequential numbers because this row gets locked (`with_for_update()`) while one request is using it, forcing the other to wait its turn rather than both reading the same "last number" and colliding.
 
 **`invoices`** — one row per created invoice: which tenant, which customer, the generated `invoice_number`, and the calculated `sub_total`/`total`.
 
@@ -412,14 +412,14 @@ Visit `http://localhost:8000/docs` for the interactive API explorer.
 uv run pytest -v
 ```
 
-## Code quality
+## 13. Code quality
 
 ```bash
 uv run ruff check .
 uv run mypy .
 ```
 
-## API overview
+## 14. API overview
 
 All endpoints except `/`, `/auth/signup`, and `/auth/login` require a `Bearer` token, obtained from signup/login. All data is scoped per-tenant — each business only ever sees its own products/customers.
 
@@ -439,7 +439,7 @@ All endpoints except `/`, `/auth/signup`, and `/auth/login` require a `Bearer` t
 | PUT | `/customers/{id}` | admin | Update a customer (partial) |
 | DELETE | `/customers/{id}` | admin | Delete a customer |
 
-## Roadmap
+## 15. Roadmap
 
 - [x] Multi-tenant auth (signup/login, JWT, RBAC)
 - [x] Tenant-scoped product & customer CRUD
@@ -449,8 +449,3 @@ All endpoints except `/`, `/auth/signup`, and `/auth/login` require a `Bearer` t
 - [ ] Payments (Razorpay) + webhooks
 - [ ] Background jobs (reports, alerts)
 - [ ] Dockerized deployment (VPS + Nginx + HTTPS)
-
-## Known limitations (in progress)
-
-- Database session is currently a single shared instance, not yet request-scoped — fine for local single-user testing, needs fixing before concurrent load.
-- No `.env`-based config loading wired into the app yet — see `.env.example`.
