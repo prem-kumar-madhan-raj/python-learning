@@ -84,6 +84,6 @@ async def get_invoice_pdf(invoice_number: str, db: Session = Depends(get_db), cu
     calculated = create_invoice(calculated_items)
     
     pdf_bytes = generate_invoice_pdf(invoice_number, customer.name, calculated)
-    return Response(content=pdf_bytes, media_type="application/pdf")
+    return Response(content=pdf_bytes, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={invoice_number}.pdf"})
     
     
