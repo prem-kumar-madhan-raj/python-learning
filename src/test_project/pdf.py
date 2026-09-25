@@ -1,21 +1,22 @@
-from io import BytesIO
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer
+import io
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
+
 from test_project.invoice import Invoice as CalculatedInvoice
 
-def generate_invoice_pdf(customer_name: str, invoice_id: str, calculated: CalculatedInvoice):
-    buffer = BytesIO()
+def generate_invoice_pdf(invoice_number: str, customer_name: str, calculated: CalculatedInvoice) -> bytes:
+    buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4)
     styles = getSampleStyleSheet()
     elements = []
 
-    elements.append(Paragraph(f"Invoice {invoice_id}", styles['Title']))
-    elements.append(Paragraph(f"Billed To: {customer_name}", styles['Normal']))
+    elements.append(Paragraph(f"Invoice {invoice_number}", styles["Title"]))
+    elements.append(Paragraph(f"Billed to: {customer_name}", styles["Normal"]))
     elements.append(Spacer(1, 20))
 
-    table_data = [["Description", "Qty", "Price", "Total"]]
+    table_data = [["Description", "Qty", "Unit Price", "Total"]]
     for item in calculated.line_items:
         table_data.append([
             item.description,
@@ -23,9 +24,7 @@ def generate_invoice_pdf(customer_name: str, invoice_id: str, calculated: Calcul
             f"{item.unit_price:.2f}",
             f"{item.total:.2f}",
         ])
-
     table_data.append(["", "", "Total", f"{calculated.total:.2f}"])
-
 
     table = Table(table_data, colWidths=[220, 60, 100, 100])
     table.setStyle(TableStyle([
@@ -34,6 +33,6 @@ def generate_invoice_pdf(customer_name: str, invoice_id: str, calculated: Calcul
         ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
     ]))
     elements.append(table)
+
     doc.build(elements)
-    buffer.seek(0)
     return buffer.getvalue()

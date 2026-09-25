@@ -1,22 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from test_project.auth import get_current_user
 from test_project.models.db_models import Invoice, InvoiceLineItem, Customer, get_db
 from test_project.invoice import create_invoice, LineItem
 from test_project.billing import get_next_invoice_number
-from pydantic import BaseModel
-
-
-class LineItemRequest(BaseModel):
-    description: str
-    quantity: int
-    unit_price: float
-
-class InvoiceCreateRequest(BaseModel):
-    customer_id: int
-    items: list[LineItemRequest]
-
+from test_project.models.models import InvoiceCreateRequest
+from test_project.pdf import generate_invoice_pdf
 
 router = APIRouter()
 
@@ -72,4 +62,28 @@ async def create_invoice_route(request: InvoiceCreateRequest, db: Session = Depe
 
 @router.get("/{invoice_number}/pdf")
 async def get_invoice_pdf(invoice_number: str, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    pass
+    invoice = db.execute(
+        select(Invoice).where(
+            Invoice.invoice_number == invoice_number,
+            Invoice.tenant_id == current_user["tenant_id"],
+        )
+    ).scalar_one_or_none()
+    
+    if invoice is None:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    line_items = db.execute(
+        select(InvoiceLineItem).where(InvoiceLineItem.invoice_id == invoice.id)
+    ).scalars().all()
+    
+    customer = db.execute(
+        select(Customer).where(Customer.id == invoice.customer_id)
+    ).scalar_one_or_none()
+    
+    calculated_items = [LineItem(li.description, li.quantity, float(li.unit_price)) for li in line_items]
+    calculated = create_invoice(calculated_items)
+    
+    pdf_bytes = generate_invoice_pdf(invoice_number, customer.name, calculated)
+    return Response(content=pdf_bytes, media_type="application/pdf")
+    
+    

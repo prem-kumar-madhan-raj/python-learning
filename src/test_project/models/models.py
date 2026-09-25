@@ -30,3 +30,12 @@ class CustomerUpdate(BaseModel):
     name: str | None = None
     phone: str | None = None
     gstin: str | None = None
+
+class LineItemRequest(BaseModel):
+    description: str
+    quantity: int
+    unit_price: float
+
+class InvoiceCreateRequest(BaseModel):
+    customer_id: int
+    items: list[LineItemRequest]
