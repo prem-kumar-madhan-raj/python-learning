@@ -39,3 +39,16 @@ class LineItemRequest(BaseModel):
 class InvoiceCreateRequest(BaseModel):
     customer_id: int
     items: list[LineItemRequest]
+    
+class InviteUserRequest(BaseModel):
+    email: str
+    password: str
+    role: str
+
+class UserList(BaseModel):
+    id: int
+    email: str
+    role: str
+
+class RoleUpdateRequest(BaseModel):
+    role: str
