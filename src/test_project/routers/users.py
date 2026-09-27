@@ -47,6 +47,7 @@ def invite_user(invite_request: InviteUserRequest, current_user: dict = Depends(
     
     new_user = User(
         email=invite_request.email,
+        name=invite_request.name,
         hashed_password=hash_password(invite_request.password),  # In a real application, hash the password
         role=invite_request.role,
         tenant_id=current_user["tenant_id"]
