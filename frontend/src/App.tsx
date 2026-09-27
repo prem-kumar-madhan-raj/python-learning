@@ -4,6 +4,8 @@ import { queryClient } from "./api/queryClient";
 import { AuthProvider } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
+import ProductsPage from "./pages/ProductsPage";
+import CustomersPage from "./pages/CustomersPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
@@ -18,7 +20,15 @@ export default function App() {
               path="/products"
               element={
                 <ProtectedRoute>
-                  <div className="p-8">Products page — Day 42</div>
+                  <ProductsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/customers"
+              element={
+                <ProtectedRoute>
+                  <CustomersPage />
                 </ProtectedRoute>
               }
             />
