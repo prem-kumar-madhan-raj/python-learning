@@ -11,7 +11,7 @@ export default function Topbar({ title }: { title: string }) {
           {user?.role}
         </span>
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-xs font-semibold text-white">
-          T{user?.tenant_id}
+          T{user?.name}
         </div>
       </div>
     </header>

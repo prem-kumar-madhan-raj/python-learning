@@ -1,5 +1,6 @@
 export interface TokenPayload {
   sub: string;
+  name: string;
   tenant_id: number;
   role: "admin" | "cashier";
   exp: number;

@@ -41,6 +41,7 @@ class InvoiceCreateRequest(BaseModel):
     items: list[LineItemRequest]
     
 class InviteUserRequest(BaseModel):
+    name:str
     email: str
     password: str
     role: str
@@ -49,6 +50,7 @@ class UserList(BaseModel):
     id: int
     email: str
     role: str
+    name: str
 
 class RoleUpdateRequest(BaseModel):
     role: str

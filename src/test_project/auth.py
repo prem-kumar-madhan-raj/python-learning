@@ -33,12 +33,13 @@ def get_current_user(token: HTTPAuthorizationCredentials = Depends(bearer_scheme
         user_id: str = payload.get("sub")
         tenant_id: int = payload.get("tenant_id")
         role: str = payload.get("role")
+        name: str = payload.get("name")
         if user_id is None or tenant_id is None or role is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid authentication credentials",
             )
-        return {"user_id": int(user_id), "tenant_id": tenant_id, "role": role}
+        return {"user_id": int(user_id), "tenant_id": tenant_id, "role": role, "name": name}
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
