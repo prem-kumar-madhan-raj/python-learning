@@ -16,7 +16,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     if user is None or not verify_password(request.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    token = create_access_token(user.id, user.tenant_id, user.role)
+    token = create_access_token(user.id, user.tenant_id, user.role, user.name)
     return {"access_token": token, "token_type": "bearer"}
 
 @router.post("/signup")
@@ -35,6 +35,7 @@ def signup(request: SignUpRequest, db: Session = Depends(get_db)):
 
     new_user = User(
         email=request.email,
+        name=request.name,
         hashed_password=hash_password(request.password),
         tenant_id=new_tenant.id,
         role="admin"
@@ -44,6 +45,6 @@ def signup(request: SignUpRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
-    token = create_access_token(new_user.id, new_user.tenant_id, new_user.role)
+    token = create_access_token(new_user.id, new_user.tenant_id, new_user.role, new_user.name)
     return {"access_token": token, "token_type": "bearer"}
 

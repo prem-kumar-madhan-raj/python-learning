@@ -18,11 +18,12 @@ def hash_password(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
-def create_access_token(user_id: int, tenant_id:int, role: str) -> str:
+def create_access_token(user_id: int, tenant_id:int, role: str, name: str) -> str:
     payload = {
         "sub": str(user_id),
         "tenant_id": tenant_id,
         "role": role,
+        "name": name,
         "exp": datetime.now(timezone.utc) + timedelta(hours=8),
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
