@@ -2,6 +2,7 @@ from pydantic import BaseModel
 
 class SignUpRequest(BaseModel):
     business_name: str
+    name: str
     email: str
     password: str
 

@@ -7,6 +7,7 @@ import { AuthLayout } from "../components/AuthLayout";
 export default function SignupPage() {
   const [businessName, setBusinessName] = useState("");
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export default function SignupPage() {
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     signupMutation.mutate(
-      { business_name: businessName, email, password },
+      { business_name: businessName, email, password , name},
       {
         onSuccess: (data) => {
           login(data.access_token);
@@ -41,6 +42,19 @@ export default function SignupPage() {
             placeholder="Prem Stationery"
             value={businessName}
             onChange={(e) => setBusinessName(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-neutral-700">
+            Name
+          </label>
+          <input
+            type="email"
+            required
+            className="input-field"
+            placeholder="Prem Kumar"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
           />
         </div>
         <div>
