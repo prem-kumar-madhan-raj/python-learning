@@ -503,28 +503,57 @@ This is the clearest example in the whole codebase of the layered design: the **
 
 ---
 
-## 12. How the Frontend Will Connect
+## 12. Frontend Implementation & UI Workflow
 
-The React/TypeScript app is a separate concern from everything above — it talks to the API purely over HTTP, the same way `/docs` or `curl` does.
+The React/TypeScript app is a separate concern from the backend, but it follows the same contracts as `/docs` or `curl`: it sends JSON over HTTP, attaches the JWT, and renders the API response. The current frontend is implemented under `frontend/` with Vite, React, TypeScript, React Router, Axios, and TanStack Query.
 
 ```mermaid
-graph LR
-    subgraph "React App"
-        Login[Login/Signup Page]
-        Products[Products Page]
-        Customers[Customers Page]
-        Billing[Billing/Invoice Page]
-    end
-    Login -->|"POST /auth/login"| API
-    Products -->|"GET/POST/PUT/DELETE /products"| API
-    Customers -->|"GET/POST/PUT/DELETE /customers"| API
-    Billing -->|"POST /invoices, GET /invoices/id/pdf"| API
-    API[FastAPI Backend]
+sequenceDiagram
+    participant User
+    participant Router as React Router
+    participant Auth as AuthProvider
+    participant Client as Axios API client
+    participant API as FastAPI backend
+    participant Query as TanStack Query cache
+
+    User->>Router: Open /login or /signup
+    User->>API: Submit credentials or business details
+    API-->>Client: access_token
+    Client->>Auth: Store token in localStorage and decode user claims
+    Auth-->>Router: Navigate to /products
+    Router->>Auth: Check ProtectedRoute
+    Auth-->>Router: Allow authenticated user
+    Router->>Query: Load products/customers through page hook
+    Query->>Client: GET /products/ or /customers/
+    Client->>API: Request with Bearer token
+    API-->>Client: Tenant-scoped JSON data
+    Client-->>Query: Cache response
+    Query-->>User: Render table, loading state, empty state, or error
 ```
 
-- After login, the JWT is stored client-side (in memory, or `localStorage`) and attached as `Authorization: Bearer <token>` on every subsequent request
-- The UI should also hide actions a user's `role` doesn't permit (e.g. no "Add Product" button for a cashier) — even though the backend already rejects it, showing a button that always fails is a poor experience
-- TypeScript types on the frontend should mirror the Pydantic schemas (`ProductCreate`, `CustomerCreate`, etc.) so a backend field rename is caught by the frontend's own type checker
+### Frontend request flow
+
+1. **Authentication:** `LoginPage` calls `POST /auth/login`; `SignupPage` calls `POST /auth/signup`. On success, `AuthContext` stores the returned JWT in `localStorage`, decodes its user, tenant, and role claims, and sends the user to `/products`.
+2. **Route protection:** `ProtectedRoute` redirects unauthenticated users to `/login`. Unknown routes also default to `/products`. A `401` from the API clears the token and redirects back to login.
+3. **Authenticated requests:** `api/client.ts` reads the stored token before every request and adds `Authorization: Bearer <token>`. The API remains responsible for verifying the token and enforcing tenant isolation.
+4. **Products:** `ProductsPage` loads `GET /products/`. Admins can create, edit, and delete products through `ProductFormModal`; cashiers can view inventory. Product mutations invalidate the React Query cache so the table refreshes from the backend.
+5. **Customers:** `CustomersPage` loads `GET /customers/`. Admins can create, edit, and delete customers; cashiers can create customers and view them. `CustomerFormModal` converts an empty GSTIN into `null` before sending the request.
+6. **UI states:** Both data pages show skeletons while loading, an error message when a request fails, an empty state when there are no records, and tables when data is available. Low product quantities are highlighted using the frontend threshold constant.
+
+### Frontend file responsibilities
+
+| File or folder | Responsibility |
+|---|---|
+| `frontend/src/App.tsx` | Provides React Query, auth context, routes, and protected pages |
+| `frontend/src/context/AuthContext.tsx` | Persists the JWT, exposes the current user, and handles login/logout |
+| `frontend/src/components/ProtectedRoute.tsx` | Redirects users who do not have a valid client-side session |
+| `frontend/src/api/client.ts` | Configures Axios, adds the bearer token, and normalizes API errors |
+| `frontend/src/hooks/` | Maps page actions to typed API queries and mutations |
+| `frontend/src/pages/` | Implements login, signup, products, and customers screens |
+| `frontend/src/components/*FormModal.tsx` | Handles create/edit form state and mutation feedback |
+| `frontend/src/types/` | Mirrors backend request and response shapes in TypeScript |
+
+The UI hides controls that the current role cannot use, but this is only a usability layer. The backend remains the security boundary: it reads `tenant_id` and `role` from the verified JWT and rejects unauthorized writes even if a client sends a request manually.
 
 ---
 
@@ -534,6 +563,9 @@ graph LR
 - ✅ Multi-tenant signup/login with JWT
 - ✅ RBAC (`admin`, `cashier`)
 - ✅ Tenant-scoped Product & Customer CRUD
+- ✅ React/TypeScript frontend for authentication, products, and customers
+- ✅ Protected client-side routes, persisted JWT session, and automatic `401` redirect
+- ✅ Role-aware product/customer actions with loading, error, and empty states
 - ✅ Per-request DB sessions (`get_db`)
 - ✅ Cloud Postgres (Neon) + `.env`-based config
 - ✅ Invoice creation (no tax yet) with safe sequential numbering
@@ -549,7 +581,7 @@ graph LR
 - Warehouse/stock transfer module
 - Payments (Razorpay) + webhooks
 - Background jobs
-- Frontend UI (React)
+- Frontend invoice creation and invoice PDF download screens
 - Dockerized deployment
 
 ---

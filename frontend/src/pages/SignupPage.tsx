@@ -49,7 +49,7 @@ export default function SignupPage() {
             Name
           </label>
           <input
-            type="email"
+            type="text"
             required
             className="input-field"
             placeholder="Prem Kumar"
